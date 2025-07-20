@@ -21,9 +21,7 @@ export default function Navbar(): React.ReactElement {
         <a href="about" className="hover:text-gray-600">
           About
         </a>
-        <a href="journey" className="hover:text-gray-600">
-          Journey
-        </a>
+
         <a href="contact" className="hover:text-gray-600">
           Contact
         </a>
@@ -40,22 +38,16 @@ export default function Navbar(): React.ReactElement {
       {menuOpen && (
         <div className="absolute top-24 left-0 w-full bg-[#e9e9e9] flex flex-col items-center space-y-6 py-6 z-50 md:hidden">
           <a
-            href="contact"
-            className="text-black text-lg"
-            onClick={() => setMenuOpen(false)}>
-            Contact
-          </a>
-          <a
             href="about"
             className="text-black text-lg"
             onClick={() => setMenuOpen(false)}>
             About
           </a>
           <a
-            href="journey"
+            href="contact"
             className="text-black text-lg"
             onClick={() => setMenuOpen(false)}>
-            Journey
+            Contact
           </a>
         </div>
       )}

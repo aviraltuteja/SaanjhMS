@@ -3,6 +3,8 @@ import BackgroundImage from "../public/Background_Saanjh_Compressed.webp";
 import { serif, cursive } from "./fonts";
 import WhyUs from "./components/landing-page/why-us";
 import MarigoldSection from "./components/landing-page/marigold-section";
+import AboutUs from "./components/landing-page/about";
+import Footer from "./components/landing-page/footer";
 
 export default function Home() {
   return (
@@ -18,7 +20,7 @@ export default function Home() {
               <div className="text-2xl text-primary">Matrimonial Services</div>
             </div>
             <div className="text-lg text-blackshade text-center">
-              Celebrate love the Indian way – where tradition meets destiny.
+              Celebrate love the Indian way, where tradition meets destiny.
               Discover your life partner with our trusted matrimonial platform,
               crafted for families seeking meaningful connections.
             </div>
@@ -45,6 +47,8 @@ export default function Home() {
       </div>
       <WhyUs />
       <MarigoldSection />
+      <AboutUs />
+      <Footer />
     </div>
   );
 }
