@@ -12,7 +12,11 @@
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
+    "@prisma/client": "^6.13.0",
+    "@radix-ui/react-dialog": "^1.1.14",
     "framer-motion": "^12.23.6",
+    "jotai": "^2.12.5",
+    "lucide-react": "^0.536.0",
     "next": "15.4.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -21,13 +25,15 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^20.19.9",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "daisyui": "^5.0.46",
     "eslint": "^9",
     "eslint-config-next": "15.4.1",
+    "prisma": "^6.13.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
   }
 }
