@@ -1,6 +1,7 @@
 import Topbar from "@/app/components/dashboard/layout/top-bar";
 import Navbar from "@/app/components/dashboard/layout/navbar";
 import { ReactNode } from "react";
+import AutoLogin from "@/app/components/auth/auto-login";
 
 export default function DashboardLayout({
   children,
@@ -9,6 +10,7 @@ export default function DashboardLayout({
 }): React.ReactElement {
   return (
     <div className="bg-gray-50 w-screen h-screen flex">
+      <AutoLogin />
       <div className="h-screen w-[15%]" id="nav-bar">
         <Navbar location={""} role={""} />
       </div>
