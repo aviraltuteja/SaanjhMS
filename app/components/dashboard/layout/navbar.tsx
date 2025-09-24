@@ -10,10 +10,10 @@ import { Home, Users, Settings, UserRoundPlus, UserCog } from "lucide-react";
 // };
 
 export default function Navbar({
-  location,
+  userId,
   role,
 }: {
-  location: string;
+  userId: string;
   role: string;
 }) {
   const router = useRouter();
@@ -27,7 +27,7 @@ export default function Navbar({
   // const userRole = validRole(role);
 
   const handleNavigate = (route: string) => () => {
-    router.push(`/${location}/${role}/dashboard/${route}`);
+    router.push(`/${userId}/${role}/dashboard/${route}`);
   };
 
   // Define navigation items

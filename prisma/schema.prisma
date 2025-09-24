@@ -1,5 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -8,15 +8,113 @@ datasource db {
 }
 
 model User {
-  id      String      @id @default(uuid())
-  email   String   @unique
-  name    String
+  id        String    @id @default(uuid())
+  email     String    @unique
+  name      String
   password  String
-  createdAt DateTime @default(now())
-  role    UserRoles
+  createdAt DateTime  @default(now())
+  role      UserRoles
+
+  client    Client?
+}
+
+model Client {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+
+  // Personal Details
+  imageUrl        String?
+  dateOfBirth     DateTime
+  gender          Gender
+  timeOfBirth     String?
+  placeOfBirth    String?
+  rashi           String?
+  height          String?
+  weight          Int?
+  maritalStatus   MaritalStatus
+  complexion      String?
+  diet            Diet
+  drink           Boolean @default(false)
+  smoke           Boolean @default(false)
+  hobbies         String[] @default([])
+
+  religion        Religion
+  motherTongue    String?
+  caste           String?
+  subCaste        String?
+  gotra           String?
+  manglik         Boolean @default(false)
+
+  // Academic Details
+  education       String?
+  collegeName     String?
+  collegeYear     Int?
+  schoolName      String?
+  schoolYear      Int?
+  otherDegree     String?
+  otherOrg        String?
+  otherYear       Int?
+
+  // Occupation
+  employedIn      String?
+  workingSince    Int?
+  organization    String?
+  annualIncome    String?
+
+  // Family Details
+  familyType      String?
+  fatherName      String?
+  fatherOccupation String?
+  motherName      String?
+  motherOccupation String?
+  familyIncome    String?
+
+  // Contact
+  permanentAddress  String?
+  residentialAddress String?
+  city              String?
+  state             String?
+  country           String?
+
+  // Other
+  numberOfCars     Int?   @default(0)
+  numberOfBikes    Int?   @default(0)
 }
 
 enum UserRoles {
   client
   admin
+}
+
+enum Gender {
+  Male
+  Female
+  Other
+}
+
+enum MaritalStatus {
+  NeverMarried
+  Divorced
+  Widowed
+  Separated
+}
+
+enum Diet {
+  Jain
+  Veg
+  Eggetarian
+  NonVeg
+}
+
+enum Religion {
+  Hindu
+  Muslim
+  Christian
+  Sikh
+  Jain
+  Buddhist
+  Parsi
+  Jewish
+  Other
 }

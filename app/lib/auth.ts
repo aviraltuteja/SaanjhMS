@@ -32,7 +32,6 @@ export async function clearAuthCookie() {
 
 export async function getUserFromCookie() {
   const cookieStore = await cookies();
-  console.log(cookieStore);
   const userId = cookieStore.get(COOKIE_NAME)?.value;
   if (!userId) return null;
 

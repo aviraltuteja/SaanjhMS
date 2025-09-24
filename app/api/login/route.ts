@@ -1,4 +1,3 @@
-// app/api/login/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { setAuthCookie, verifyPassword } from "@/app/lib/auth";
@@ -18,11 +17,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
-  const response = NextResponse.json({ success: true });
-  setAuthCookie(response, user.id);
-
-  return NextResponse.json({
-    message: "Logged in",
+  const response = NextResponse.json({
+    success: true,
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
   });
+  setAuthCookie(response, user.id);
+
+  return response;
 }
