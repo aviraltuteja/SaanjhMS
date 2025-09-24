@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { sans_serif } from "./fonts";
 import Navbar from "./components/navbar";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -16,6 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${sans_serif.className}  antialiased`}>
+        <Toaster />
         <nav>
           <Navbar />
         </nav>{" "}
