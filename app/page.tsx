@@ -4,7 +4,6 @@ import { serif, cursive } from "./fonts";
 import WhyUs from "./components/landing-page/why-us";
 import MarigoldSection from "./components/landing-page/marigold-section";
 import AboutUs from "./components/landing-page/about";
-import Footer from "./components/landing-page/footer";
 
 export default function Home() {
   return (
@@ -48,7 +47,6 @@ export default function Home() {
       <WhyUs />
       <MarigoldSection />
       <AboutUs />
-      <Footer />
     </div>
   );
 }

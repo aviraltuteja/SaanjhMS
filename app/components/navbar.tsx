@@ -27,11 +27,11 @@ export default function Navbar(): React.ReactElement {
 
           {/* Right - Menu Items */}
           <div className="hidden md:flex space-x-8 text-black md:text-lg 2xl:text-xl">
-            <a href="about" className="hover:text-gray-600">
+            <a href="/about" className="hover:text-gray-600">
               About
             </a>
 
-            <a href="contact" className="hover:text-gray-600">
+            <a href="/contact" className="hover:text-gray-600">
               Contact
             </a>
           </div>
@@ -49,13 +49,13 @@ export default function Navbar(): React.ReactElement {
           {menuOpen && (
             <div className="absolute top-24 left-0 w-full bg-[#e9e9e9] flex flex-col items-center space-y-6 py-6 z-50 md:hidden">
               <a
-                href="about"
+                href="/about"
                 className="text-black text-lg"
                 onClick={() => setMenuOpen(false)}>
                 About
               </a>
               <a
-                href="contact"
+                href="/contact"
                 className="text-black text-lg"
                 onClick={() => setMenuOpen(false)}>
                 Contact

@@ -2,12 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { Home, Users, Settings, UserRoundPlus, UserCog } from "lucide-react";
+import { UserRoles } from "@prisma/client";
 
-// const restrictedRoutes: Record<UserRole, string[]> = {
-//   [Roles.ADMIN]: [],
-//   [Roles.MANAGER]: ["manage-patients"],
-//   [Roles.USER]: ["users", "settings", "manage-patients"],
-// };
+const restrictedRoutes: Record<UserRoles, string[]> = {
+  [UserRoles.admin]: [],
+  [UserRoles.client]: ["users", "settings", "manage-patients"],
+};
 
 export default function Navbar({
   userId,
@@ -18,13 +18,13 @@ export default function Navbar({
 }) {
   const router = useRouter();
 
-  // const validRole = (role: string): UserRole => {
-  //   return Object.values(Roles).includes(role as Roles)
-  //     ? (role as UserRole)
-  //     : Roles.USER;
-  // };
+  const validRole = (role: string): UserRoles => {
+    return Object.values(role).includes(role as UserRoles)
+      ? (role as UserRoles)
+      : UserRoles.client;
+  };
 
-  // const userRole = validRole(role);
+  const userRole = validRole(role);
 
   const handleNavigate = (route: string) => () => {
     router.push(`/${userId}/${role}/dashboard/${route}`);
@@ -48,13 +48,13 @@ export default function Navbar({
   ];
 
   // Filter navigation items based on role restrictions
-  // const allowedNavItems = navItems.filter(
-  //   (item) => !restrictedRoutes[userRole].includes(item.route)
-  // );
+  const allowedNavItems = navItems.filter(
+    (item) => !restrictedRoutes[userRole].includes(item.route)
+  );
 
   return (
     <div className="h-full bg-gradient-to-b from-primary to bg-red-950 flex flex-col items-center py-6 px-2 gap-4 text-whiteshade">
-      {navItems.map((item) => (
+      {allowedNavItems.map((item) => (
         <NavItem
           key={item.route}
           icon={item.icon}

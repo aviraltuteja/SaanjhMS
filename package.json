@@ -15,18 +15,22 @@
     "@prisma/client": "^6.13.0",
     "@radix-ui/react-dialog": "^1.1.14",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.7.0",
     "framer-motion": "^12.23.6",
     "jotai": "^2.12.5",
     "lucide-react": "^0.536.0",
+    "mime-types": "^3.0.1",
     "next": "15.4.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hot-toast": "^2.5.2",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "types": "^0.1.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/mime-types": "^3.0.1",
     "@types/node": "^20.19.9",
     "@types/react": "^19",
     "@types/react-dom": "^19",
