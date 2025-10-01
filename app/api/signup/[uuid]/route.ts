@@ -6,11 +6,11 @@ const prisma = new PrismaClient();
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { uuid: string } }
+  { params }: { params: Promise<{ uuid: string }> }
 ) {
   try {
     const body = await request.json();
-    const { uuid } = params;
+    const { uuid } = await params;
 
     // Check if user exists with this UUID
     const existingUser = await prisma.user.findUnique({
@@ -50,7 +50,7 @@ export async function POST(
     });
 
     // Create client profile
-    const client = await prisma.client.create({
+    await prisma.client.create({
       data: {
         userId: uuid,
         dateOfBirth: new Date(body.dateOfBirth),

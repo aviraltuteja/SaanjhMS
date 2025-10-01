@@ -1,112 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useAtom } from "jotai";
 import { useRouter } from "next/navigation";
-import { User, MapPin, GraduationCap } from "lucide-react";
-
-interface FormData {
-  email: string;
-  password: string;
-  name: string;
-  dateOfBirth: string;
-  gender: string;
-  timeOfBirth: string;
-  placeOfBirth: string;
-  rashi: string;
-  height: string;
-  weight: string;
-  maritalStatus: string;
-  complexion: string;
-  diet: string;
-  drink: boolean;
-  smoke: boolean;
-  hobbies: string;
-  religion: string;
-  motherTongue: string;
-  caste: string;
-  subCaste: string;
-  gotra: string;
-  manglik: boolean;
-  education: string;
-  collegeName: string;
-  collegeYear: string;
-  schoolName: string;
-  schoolYear: string;
-  otherDegree: string;
-  otherOrg: string;
-  otherYear: string;
-  employedIn: string;
-  workingSince: string;
-  organization: string;
-  annualIncome: string;
-  familyType: string;
-  fatherName: string;
-  fatherOccupation: string;
-  motherName: string;
-  motherOccupation: string;
-  familyIncome: string;
-  permanentAddress: string;
-  residentialAddress: string;
-  city: string;
-  state: string;
-  country: string;
-  numberOfCars: string;
-  numberOfBikes: string;
-}
+import toast from "react-hot-toast";
+import {
+  formDataAtom,
+  isSubmittingAtom,
+  profileFileAtom,
+} from "@/app/store/signup";
 
 export default function SignupPage({ params }: { params: { uuid: string } }) {
   const router = useRouter();
-  const [formData, setFormData] = useState<FormData>({
-    email: "",
-    password: "",
-    name: "",
-    dateOfBirth: "",
-    gender: "",
-    timeOfBirth: "",
-    placeOfBirth: "",
-    rashi: "",
-    height: "",
-    weight: "",
-    maritalStatus: "",
-    complexion: "",
-    diet: "",
-    drink: false,
-    smoke: false,
-    hobbies: "",
-    religion: "",
-    motherTongue: "",
-    caste: "",
-    subCaste: "",
-    gotra: "",
-    manglik: false,
-    education: "",
-    collegeName: "",
-    collegeYear: "",
-    schoolName: "",
-    schoolYear: "",
-    otherDegree: "",
-    otherOrg: "",
-    otherYear: "",
-    employedIn: "",
-    workingSince: "",
-    organization: "",
-    annualIncome: "",
-    familyType: "",
-    fatherName: "",
-    fatherOccupation: "",
-    motherName: "",
-    motherOccupation: "",
-    familyIncome: "",
-    permanentAddress: "",
-    residentialAddress: "",
-    city: "",
-    state: "",
-    country: "",
-    numberOfCars: "0",
-    numberOfBikes: "0",
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useAtom(formDataAtom);
+  const [isSubmitting, setIsSubmitting] = useAtom(isSubmittingAtom);
+  const [profileFile, setProfileFile] = useAtom(profileFileAtom);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -117,8 +24,29 @@ export default function SignupPage({ params }: { params: { uuid: string } }) {
     setFormData((prev) => ({
       ...prev,
       [name]:
-        type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+        type === "checkbox"
+          ? (e.target as HTMLInputElement).checked
+          : type === "number" ||
+            [
+              "weight",
+              "collegeYear",
+              "schoolYear",
+              "otherYear",
+              "workingSince",
+              "numberOfCars",
+              "numberOfBikes",
+            ].includes(name)
+          ? value === ""
+            ? ""
+            : Number(value)
+          : value,
     }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setProfileFile(e.target.files[0]);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,527 +54,535 @@ export default function SignupPage({ params }: { params: { uuid: string } }) {
     setIsSubmitting(true);
 
     try {
+      let imageUrl = "";
+
+      // Upload Image
+      if (profileFile) {
+        toast.loading("Uploading profile image...");
+        const formDataImg = new FormData();
+        formDataImg.append("file", profileFile);
+        formDataImg.append("uuid", params.uuid);
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formDataImg,
+        });
+
+        toast.dismiss();
+        if (uploadRes.ok) {
+          const { url } = await uploadRes.json();
+          imageUrl = url;
+          toast.success("Image uploaded successfully!");
+        } else {
+          toast.error("Image upload failed!");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Create User Row
+      toast.loading("Creating your account...");
       const response = await fetch(`/api/signup/${params.uuid}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, imageUrl }),
       });
 
+      toast.dismiss();
       if (response.ok) {
         const data = await response.json();
-        // Redirect to dashboard after successful signup
-        router.push(`/${data.userId}/client/dashboard`);
+        toast.success("Account created successfully!");
+        // Store user name for success page
+        localStorage.setItem("userName", data.user.name);
+        router.push(`/success/${params.uuid}`);
       } else {
         const error = await response.json();
-        console.error("Signup failed:", error);
-        alert("Signup failed. Please try again.");
+        toast.error(error.message || "Signup failed. Please try again.");
       }
     } catch (error) {
       console.error("Error during signup:", error);
-      alert("An error occurred. Please try again.");
+      toast.error("An unexpected error occurred.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary to-red-950 flex items-center justify-center p-4">
-      <div className="bg-whiteshade rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div className="min-h-screen bg-gradient-to-br from-primary to-red-950 flex items-center justify-center p-4 pt-24">
+      <div className="bg-whiteshade rounded-lg text-blackshade shadow-xl w-full max-w-4xl overflow-y-auto">
         <div className="p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-primary mb-2">
               Complete Your Profile
             </h1>
-            <p className="text-greyshade">
+            <p className="text-gray-200">
               Fill in your details to create your matrimony profile
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information */}
-            <div className="bg-greyshade p-6 rounded-lg">
-              <h2 className="text-xl font-semibold text-blackshade mb-4 flex items-center gap-2">
-                <User size={20} />
-                Basic Information
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Password *
-                  </label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Date of Birth *
-                  </label>
-                  <input
-                    type="date"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Gender *
-                  </label>
-                  <select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Marital Status *
-                  </label>
-                  <select
-                    name="maritalStatus"
-                    value={formData.maritalStatus}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                    <option value="">Select Status</option>
-                    <option value="NeverMarried">Never Married</option>
-                    <option value="Divorced">Divorced</option>
-                    <option value="Widowed">Widowed</option>
-                    <option value="Separated">Separated</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Physical Details */}
-            <div className="bg-greyshade p-6 rounded-lg">
+            {/* Profile Image */}
+            <div className="bg-gray-200 p-6 rounded-lg text-blackshade">
               <h2 className="text-xl font-semibold text-blackshade mb-4">
-                Physical Details
+                Profile Picture
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Height
-                  </label>
-                  <input
-                    type="text"
-                    name="height"
-                    value={formData.height}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 5'8\"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Weight (kg)
-                  </label>
-                  <input
-                    type="number"
-                    name="weight"
-                    value={formData.weight}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Complexion
-                  </label>
-                  <input
-                    type="text"
-                    name="complexion"
-                    value={formData.complexion}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Diet *
-                  </label>
-                  <select
-                    name="diet"
-                    value={formData.diet}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                    <option value="">Select Diet</option>
-                    <option value="Jain">Jain</option>
-                    <option value="Veg">Vegetarian</option>
-                    <option value="Eggetarian">Eggetarian</option>
-                    <option value="NonVeg">Non-Vegetarian</option>
-                  </select>
-                </div>
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="drink"
-                      checked={formData.drink}
-                      onChange={handleInputChange}
-                      className="rounded"
-                    />
-                    <span className="text-sm text-blackshade">Drinks</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="smoke"
-                      checked={formData.smoke}
-                      onChange={handleInputChange}
-                      className="rounded"
-                    />
-                    <span className="text-sm text-blackshade">Smokes</span>
-                  </label>
-                </div>
-              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
             </div>
 
-            {/* Religious & Cultural Details */}
-            <div className="bg-greyshade p-6 rounded-lg">
+            {/* User Info */}
+            <div className="bg-gray-200 p-6 rounded-lg text-blackshade space-y-4">
               <h2 className="text-xl font-semibold text-blackshade mb-4">
-                Religious & Cultural Details
+                Account Info
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Religion *
-                  </label>
-                  <select
-                    name="religion"
-                    value={formData.religion}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                    <option value="">Select Religion</option>
-                    <option value="Hindu">Hindu</option>
-                    <option value="Muslim">Muslim</option>
-                    <option value="Christian">Christian</option>
-                    <option value="Sikh">Sikh</option>
-                    <option value="Jain">Jain</option>
-                    <option value="Buddhist">Buddhist</option>
-                    <option value="Parsi">Parsi</option>
-                    <option value="Jewish">Jewish</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Mother Tongue
-                  </label>
-                  <input
-                    type="text"
-                    name="motherTongue"
-                    value={formData.motherTongue}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Caste
-                  </label>
-                  <input
-                    type="text"
-                    name="caste"
-                    value={formData.caste}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Sub Caste
-                  </label>
-                  <input
-                    type="text"
-                    name="subCaste"
-                    value={formData.subCaste}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Gotra
-                  </label>
-                  <input
-                    type="text"
-                    name="gotra"
-                    value={formData.gotra}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    name="manglik"
-                    checked={formData.manglik}
-                    onChange={handleInputChange}
-                    className="rounded"
-                  />
-                  <span className="text-sm text-blackshade">Manglik</span>
-                </div>
-              </div>
+              <input
+                type="text"
+                name="name"
+                placeholder="Full Name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
             </div>
 
-            {/* Education & Career */}
-            <div className="bg-greyshade p-6 rounded-lg">
-              <h2 className="text-xl font-semibold text-blackshade mb-4 flex items-center gap-2">
-                <GraduationCap size={20} />
-                Education & Career
+            {/* Personal Info */}
+            <div className="bg-gray-200 p-6 rounded-lg text-blackshade space-y-4">
+              <h2 className="text-xl font-semibold text-blackshade mb-4">
+                Personal Details
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Education
-                  </label>
-                  <input
-                    type="text"
-                    name="education"
-                    value={formData.education}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    College Name
-                  </label>
-                  <input
-                    type="text"
-                    name="collegeName"
-                    value={formData.collegeName}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Occupation
-                  </label>
-                  <input
-                    type="text"
-                    name="employedIn"
-                    value={formData.employedIn}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Organization
-                  </label>
-                  <input
-                    type="text"
-                    name="organization"
-                    value={formData.organization}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Annual Income
-                  </label>
-                  <input
-                    type="text"
-                    name="annualIncome"
-                    value={formData.annualIncome}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-              </div>
+              <input
+                type="date"
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade">
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+              <input
+                type="time"
+                name="timeOfBirth"
+                value={formData.timeOfBirth}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="placeOfBirth"
+                placeholder="Place of Birth"
+                value={formData.placeOfBirth}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="rashi"
+                placeholder="Rashi"
+                value={formData.rashi}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="height"
+                placeholder="Height"
+                value={formData.height}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="number"
+                name="weight"
+                placeholder="Weight (kg)"
+                value={formData.weight}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <select
+                name="maritalStatus"
+                value={formData.maritalStatus}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade">
+                <option value="">Select Marital Status</option>
+                <option value="NeverMarried">Never Married</option>
+                <option value="Divorced">Divorced</option>
+                <option value="Widowed">Widowed</option>
+                <option value="Separated">Separated</option>
+              </select>
+              <input
+                type="text"
+                name="complexion"
+                placeholder="Complexion"
+                value={formData.complexion}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <select
+                name="diet"
+                value={formData.diet}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade">
+                <option value="">Select Diet</option>
+                <option value="Jain">Jain</option>
+                <option value="Veg">Veg</option>
+                <option value="Eggetarian">Eggetarian</option>
+                <option value="NonVeg">Non-Veg</option>
+              </select>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="drink"
+                  checked={formData.drink}
+                  onChange={handleInputChange}
+                />
+                Drink
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="smoke"
+                  checked={formData.smoke}
+                  onChange={handleInputChange}
+                />
+                Smoke
+              </label>
+              <input
+                type="text"
+                name="hobbies"
+                placeholder="Hobbies (comma-separated)"
+                value={formData.hobbies}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <select
+                name="religion"
+                value={formData.religion}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade">
+                <option value="">Select Religion</option>
+                <option value="Hindu">Hindu</option>
+                <option value="Muslim">Muslim</option>
+                <option value="Christian">Christian</option>
+                <option value="Sikh">Sikh</option>
+                <option value="Jain">Jain</option>
+                <option value="Buddhist">Buddhist</option>
+                <option value="Parsi">Parsi</option>
+                <option value="Jewish">Jewish</option>
+                <option value="Other">Other</option>
+              </select>
+              <input
+                type="text"
+                name="motherTongue"
+                placeholder="Mother Tongue"
+                value={formData.motherTongue}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="caste"
+                placeholder="Caste"
+                value={formData.caste}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="subCaste"
+                placeholder="Sub-Caste"
+                value={formData.subCaste}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="gotra"
+                placeholder="Gotra"
+                value={formData.gotra}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="manglik"
+                  checked={formData.manglik}
+                  onChange={handleInputChange}
+                />
+                Manglik
+              </label>
             </div>
 
-            {/* Family Details */}
-            <div className="bg-greyshade p-6 rounded-lg">
+            {/* Academic */}
+            <div className="bg-gray-200 p-6 rounded-lg text-blackshade space-y-4">
+              <h2 className="text-xl font-semibold text-blackshade mb-4">
+                Academic Details
+              </h2>
+              <input
+                type="text"
+                name="education"
+                placeholder="Education"
+                value={formData.education}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="collegeName"
+                placeholder="College Name"
+                value={formData.collegeName}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="number"
+                name="collegeYear"
+                placeholder="College Year"
+                value={formData.collegeYear}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="schoolName"
+                placeholder="School Name"
+                value={formData.schoolName}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="number"
+                name="schoolYear"
+                placeholder="School Year"
+                value={formData.schoolYear}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="otherDegree"
+                placeholder="Other Degree"
+                value={formData.otherDegree}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="otherOrg"
+                placeholder="Other Organization"
+                value={formData.otherOrg}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="number"
+                name="otherYear"
+                placeholder="Other Year"
+                value={formData.otherYear}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+            </div>
+
+            {/* Occupation */}
+            <div className="bg-gray-200 p-6 rounded-lg text-blackshade space-y-4">
+              <h2 className="text-xl font-semibold text-blackshade mb-4">
+                Occupation
+              </h2>
+              <input
+                type="text"
+                name="employedIn"
+                placeholder="Employed In"
+                value={formData.employedIn}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="number"
+                name="workingSince"
+                placeholder="Working Since (Year)"
+                value={formData.workingSince}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="organization"
+                placeholder="Organization"
+                value={formData.organization}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="annualIncome"
+                placeholder="Annual Income"
+                value={formData.annualIncome}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+            </div>
+
+            {/* Family */}
+            <div className="bg-gray-200 p-6 rounded-lg text-blackshade space-y-4">
               <h2 className="text-xl font-semibold text-blackshade mb-4">
                 Family Details
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    {`Father's Name`}
-                  </label>
-                  <input
-                    type="text"
-                    name="fatherName"
-                    value={formData.fatherName}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    {`Father's Occupation`}
-                  </label>
-                  <input
-                    type="text"
-                    name="fatherOccupation"
-                    value={formData.fatherOccupation}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    {` Mother's Name`}
-                  </label>
-                  <input
-                    type="text"
-                    name="motherName"
-                    value={formData.motherName}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    {`Mother's Occupation`}
-                  </label>
-                  <input
-                    type="text"
-                    name="motherOccupation"
-                    value={formData.motherOccupation}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-              </div>
+              <input
+                type="text"
+                name="familyType"
+                placeholder="Family Type"
+                value={formData.familyType}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="fatherName"
+                placeholder="Father's Name"
+                value={formData.fatherName}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="fatherOccupation"
+                placeholder="Father's Occupation"
+                value={formData.fatherOccupation}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="motherName"
+                placeholder="Mother's Name"
+                value={formData.motherName}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="motherOccupation"
+                placeholder="Mother's Occupation"
+                value={formData.motherOccupation}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="familyIncome"
+                placeholder="Family Income"
+                value={formData.familyIncome}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
             </div>
 
-            {/* Contact Information */}
-            <div className="bg-greyshade p-6 rounded-lg">
-              <h2 className="text-xl font-semibold text-blackshade mb-4 flex items-center gap-2">
-                <MapPin size={20} />
-                Contact Information
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    name="country"
-                    value={formData.country}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-blackshade mb-1">
-                    Permanent Address
-                  </label>
-                  <textarea
-                    name="permanentAddress"
-                    value={formData.permanentAddress}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Hobbies */}
-            <div className="bg-greyshade p-6 rounded-lg">
+            {/* Contact */}
+            <div className="bg-gray-200 p-6 rounded-lg text-blackshade space-y-4">
               <h2 className="text-xl font-semibold text-blackshade mb-4">
-                Hobbies & Interests
+                Contact Details
               </h2>
-              <div>
-                <label className="block text-sm font-medium text-blackshade mb-1">
-                  Hobbies (comma-separated)
-                </label>
-                <textarea
-                  name="hobbies"
-                  value={formData.hobbies}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Reading, Swimming, Cooking"
-                  rows={3}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-              </div>
+              <input
+                type="text"
+                name="permanentAddress"
+                placeholder="Permanent Address"
+                value={formData.permanentAddress}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="residentialAddress"
+                placeholder="Residential Address"
+                value={formData.residentialAddress}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="city"
+                placeholder="City"
+                value={formData.city}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="state"
+                placeholder="State"
+                value={formData.state}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="text"
+                name="country"
+                placeholder="Country"
+                value={formData.country}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
             </div>
 
-            <div className="flex justify-center pt-6">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-primary text-whiteshade px-8 py-3 rounded-lg hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-lg font-medium">
-                {isSubmitting ? "Creating Profile..." : "Complete Registration"}
-              </button>
+            {/* Other */}
+            <div className="bg-gray-200 p-6 rounded-lg text-blackshade space-y-4">
+              <h2 className="text-xl font-semibold text-blackshade mb-4">
+                Other
+              </h2>
+              <input
+                type="number"
+                name="numberOfCars"
+                placeholder="Number of Cars"
+                value={formData.numberOfCars}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
+              <input
+                type="number"
+                name="numberOfBikes"
+                placeholder="Number of Bikes"
+                value={formData.numberOfBikes}
+                onChange={handleInputChange}
+                className="w-full p-3 border rounded-lg text-blackshade"
+              />
             </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-primary text-whiteshade font-semibold py-3 rounded-lg hover:bg-primary/90 disabled:opacity-50 transition">
+              {isSubmitting ? "Submitting..." : "Create Profile"}
+            </button>
           </form>
         </div>
       </div>

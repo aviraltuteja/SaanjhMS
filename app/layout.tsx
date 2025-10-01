@@ -3,6 +3,7 @@ import "./globals.css";
 import { sans_serif } from "./fonts";
 import Navbar from "./components/navbar";
 import { Toaster } from "react-hot-toast";
+import Footer from "./components/landing-page/footer";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -22,6 +23,7 @@ export default function RootLayout({
           <Navbar />
         </nav>{" "}
         {children}
+        <Footer />
       </body>
     </html>
   );
